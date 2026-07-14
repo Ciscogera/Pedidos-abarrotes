@@ -104,7 +104,7 @@ def generar_excel_desde_datos(conteos, responsable, fecha):
         bottom=Side(style='thin', color='CCCCCC')
     )
     
-    ws["A1"] = "Inventario Abarrote Barra"
+    ws["A1"] = ":material/grocery: Inventario Abarrote Barra"
     ws["A1"].font = font_titulo
     
     ws["A2"] = f"Nombre Responsable: {responsable}"
@@ -160,13 +160,13 @@ def generar_mensaje_whatsapp(lista_pedidos):
     return mensaje
 
 # --- INTERFAZ DE USUARIO ---
-st.title(" Pedidos de Abarrotes - El Bajo")
+st.title(" :material/grocery: Pedidos de Abarrotes - El Bajo")
 
 # =====================================================================
 # PASO 1: CONFIGURACIÓN OBLIGATORIA (PANTALLA DE BLOQUEO EN EL CELULAR)
 # =====================================================================
 if st.session_state.paso_flujo == "configuracion":
-    st.subheader(" Configuración Obligatoria de Turno")
+    st.subheader(":material/lock_person: Configuración Obligatoria de Turno")
     st.write("Por favor, ingresa los siguientes datos para poder habilitar el inventario:")
     
     # Inputs grandes, directos y listos para el pulgar en el celular
@@ -183,7 +183,7 @@ if st.session_state.paso_flujo == "configuracion":
     )
     
     fecha_temp = st.date_input(
-        "📅 Fecha del Inventario:",
+        ":material/date_range: Fecha del Inventario:",
         value=datetime.strptime(st.session_state.fecha_inventario, '%Y-%m-%d')
     ).strftime('%Y-%m-%d')
     
@@ -194,9 +194,9 @@ if st.session_state.paso_flujo == "configuracion":
         tel_limpio = telefono_temp.strip().replace("+", "").replace(" ", "")
         
         if not responsable_temp.strip():
-            st.error("⚠️ Debes ingresar tu nombre para poder registrar el documento Excel.")
+            st.error(":material/error: Debes ingresar tu nombre para poder registrar el documento Excel.")
         elif not tel_limpio.isdigit() or len(tel_limpio) != 11 or not tel_limpio.startswith("+569"):
-            st.error("⚠️ WhatsApp inválido. Asegúrate de ingresar el código de país completo (ej: +569 y luego los 8 números de teléfono).")
+            st.error(":material/error: WhatsApp inválido. Asegúrate de ingresar el código de país completo (ej: +569 y luego los 8 números de teléfono).")
         else:
             # Guardamos la configuración aprobada en la sesión global
             st.session_state.responsable = responsable_temp.strip()
@@ -210,10 +210,10 @@ if st.session_state.paso_flujo == "configuracion":
 # =====================================================================
 elif st.session_state.paso_flujo == "formulario":
     # Banner informativo superior muy cómodo para el celular
-    st.success(f"🔓 Turno Activo: {st.session_state.responsable} | 📅 {st.session_state.fecha_inventario}")
+    st.success(f":material/lock_open_right: Turno Activo: {st.session_state.responsable} | :material/date_range: {st.session_state.fecha_inventario}")
     
     # Botón de escape por si quieren editar el teléfono o el responsable sobre la marcha
-    if st.button("⚙️ Cambiar Teléfono o Responsable", use_container_width=True):
+    if st.button(":material/configure: Cambiar Teléfono o Responsable", use_container_width=True):
         st.session_state.paso_flujo = "configuracion"
         st.rerun()
         
@@ -223,7 +223,7 @@ elif st.session_state.paso_flujo == "formulario":
     df_inv = pd.DataFrame(PRODUCTOS_BASE)
     df_inv["Categoria"] = df_inv["Nombre"].apply(categorizar_producto)
     
-    st.subheader(" Conteo Actual de Insumos")
+    st.subheader(":material/clipboard_list: Conteo Actual de Insumos")
     
     conteos_usuario = {}
     categorias = [" Frutas y Verduras Frescas", " Especias y Deshidratados", " Abarrotes, Lácteos y Otros"]
@@ -232,14 +232,14 @@ elif st.session_state.paso_flujo == "formulario":
         df_cat = df_inv[df_inv["Categoria"] == cat]
         if df_cat.empty: continue
         
-        with st.expander(f"🔽 {cat} ({len(df_cat)} productos)"):
+        with st.expander(f":material/expand_circle_down: {cat} ({len(df_cat)} productos)"):
             for idx, row in df_cat.iterrows():
                 prod_name = row["Nombre"]
                 par_stock = row["Par"]
                 medida = row["Medida"]
                 
                 st.markdown(f"*{prod_name}*")
-                st.caption(f"📏 Medida: {medida} | Par: {par_stock}")
+                st.caption(f" Medida: {medida} | Par: {par_stock}")
                 
                 # Control inteligente de decimales para pantalla móvil
                 decimales_activos = (par_stock % 1 != 0)
@@ -264,7 +264,7 @@ elif st.session_state.paso_flujo == "formulario":
                 st.markdown("---")
                 
     # --- CALCULO Y DESPACHO ---
-    if st.button("🚀 CALCULAR PEDIDO DE ABARROTES", use_container_width=True):
+    if st.button(":material/calculate: CALCULAR PEDIDO DE ABARROTES", use_container_width=True):
         registros_pedido = []
         for clave, info in conteos_usuario.items():
             cantidad_pedir = max(0.0, info["Par"] - info["Actual"])
@@ -286,23 +286,23 @@ elif st.session_state.paso_flujo == "formulario":
                 st.session_state.fecha_inventario
             )
             
-            st.subheader(" Pedido Sugerido")
+            st.subheader(":material/shopping_cart: Pedido Sugerido")
             st.dataframe(df_pedido[["Categoria", "Producto", "Cantidad_Pedir", "Medida"]], use_container_width=True, hide_index=True)
             
             # Formateamos texto para WhatsApp
             texto_pedido = generar_mensaje_whatsapp(df_pedido)
-            st.subheader(" Vista Previa del Pedido")
+            st.subheader(":material/preview: Vista Previa del Pedido")
             st.code(texto_pedido, language="text")
             
             # Codificación URL para el redireccionamiento
             texto_codificado = urllib.parse.quote(texto_pedido)
             url_whatsapp = f"https://wa.me/{st.session_state.telefono_proveedor}?text={texto_codificado}"
             
-            st.markdown("### 📲 Despacho Directo")
-            st.link_button("🟢 ENVIAR PEDIDO POR WHATSAPP", url_whatsapp, use_container_width=True)
+            st.markdown(":material/mobile_chat: Despacho Directo")
+            st.link_button(" :material/send: ENVIAR PEDIDO POR WHATSAPP", url_whatsapp, use_container_width=True)
             
             st.download_button(
-                label=" DESCARGAR PLANILLA EXCEL REGISTRADA",
+                label=" :material/download: DESCARGAR PLANILLA EXCEL REGISTRADA",
                 data=st.session_state.excel_final,
                 file_name=f"Pedido_Cocina_{st.session_state.fecha_inventario}.xlsx",
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
