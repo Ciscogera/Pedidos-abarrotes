@@ -8,7 +8,7 @@ import urllib.parse
 from datetime import datetime
 
 # --- CONFIGURACIÓN DE PÁGINA WEB ---
-st.set_page_config(page_title="Pedidos Cocina - El Bajo", page_icon="", layout="centered")
+st.set_page_config(page_title="Pedidos Abarrotes - El Bajo", page_icon="", layout="centered")
 
 # --- CATÁLOGO DE PRODUCTOS INTEGRADO (Estructura Molde) ---
 PRODUCTOS_BASE = [
@@ -160,7 +160,7 @@ def generar_mensaje_whatsapp(lista_pedidos):
     return mensaje
 
 # --- INTERFAZ DE USUARIO ---
-st.title(" Pedidos de Cocina - El Bajo")
+st.title(" Pedidos de Abarrotes - El Bajo")
 
 # =====================================================================
 # PASO 1: CONFIGURACIÓN OBLIGATORIA (PANTALLA DE BLOQUEO EN EL CELULAR)
@@ -264,7 +264,7 @@ elif st.session_state.paso_flujo == "formulario":
                 st.markdown("---")
                 
     # --- CALCULO Y DESPACHO ---
-    if st.button("🚀 CALCULAR PEDIDO DE COCINA", use_container_width=True):
+    if st.button("🚀 CALCULAR PEDIDO DE ABARROTES", use_container_width=True):
         registros_pedido = []
         for clave, info in conteos_usuario.items():
             cantidad_pedir = max(0.0, info["Par"] - info["Actual"])
