@@ -8,7 +8,7 @@ import urllib.parse
 from datetime import datetime
 
 # --- CONFIGURACIÓN DE PÁGINA WEB ---
-st.set_page_config(page_title="Pedidos Abarrotes - El Bajo", page_icon="🍅", layout="centered")
+st.set_page_config(page_title="Pedidos Abarrotes - El Bajo", page_icon="🍋‍🟩", layout="centered")
 
 # --- 1. CATÁLOGO DE PRODUCTOS INTEGRADO EN CÓDIGO (Estructura Molde) ---
 PRODUCTOS_BASE = [
@@ -102,7 +102,7 @@ def categorizar_producto(nombre):
     elif any(x in nombre_lower for x in especias):
         return "🌶️ Especias y Deshidratados"
     else:
-        return "🥫 Abarrotes, Lácteos y Otros"
+        return "🥛 Abarrotes, Lácteos y Otros"
 
 # --- 4. CONSTRUCTOR DINÁMICO DE EXCEL (Replica tu diseño original) ---
 def generar_excel_desde_datos(conteos, responsable, fecha):
