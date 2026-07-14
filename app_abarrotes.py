@@ -8,9 +8,9 @@ import urllib.parse
 from datetime import datetime
 
 # --- CONFIGURACIÓN DE PÁGINA WEB ---
-st.set_page_config(page_title="Pedidos Abarrotes - El Bajo", page_icon="🍋‍🟩", layout="centered")
+st.set_page_config(page_title="Pedidos Cocina - El Bajo", page_icon="", layout="centered")
 
-# --- 1. CATÁLOGO DE PRODUCTOS INTEGRADO EN CÓDIGO (Estructura Molde) ---
+# --- CATÁLOGO DE PRODUCTOS INTEGRADO (Estructura Molde) ---
 PRODUCTOS_BASE = [
     {"Nombre": "Limon en malla", "Par": 8.0, "Medida": "MALLAS"},
     {"Nombre": "Pomelo", "Par": 10.0, "Medida": "KG"},
@@ -63,29 +63,12 @@ if "responsable" not in st.session_state:
     st.session_state.responsable = ""
 if "fecha_inventario" not in st.session_state:
     st.session_state.fecha_inventario = datetime.today().strftime('%Y-%m-%d')
-if "etapa" not in st.session_state:
-    st.session_state.etapa = "formulario"
+if "paso_flujo" not in st.session_state:
+    st.session_state.paso_flujo = "configuracion"  # Forzamos inicio en configuración
 if "excel_final" not in st.session_state:
     st.session_state.excel_final = None
 
-# --- 2. CONFIGURACIÓN LATERAL (CONTROL SEGURO DE ESTADOS) ---
-st.sidebar.header("⚙️ Configuración del Pedido")
-st.session_state.telefono_proveedor = st.sidebar.text_input(
-    "Teléfono del Encargado (con código de país, ej: +56912345678):",
-    value=st.session_state.telefono_proveedor
-)
-
-st.session_state.responsable = st.sidebar.text_input(
-    "Nombre del Responsable:",
-    value=st.session_state.responsable
-)
-
-st.session_state.fecha_inventario = st.sidebar.text_input(
-    "Fecha del Inventario:",
-    value=st.session_state.fecha_inventario
-)
-
-# --- 3. CLASIFICADOR DINÁMICO DE PRODUCTOS ---
+# --- CLASIFICADOR DINÁMICO ---
 def categorizar_producto(nombre):
     nombre_lower = nombre.lower()
     verduleria = [
@@ -98,19 +81,18 @@ def categorizar_producto(nombre):
         "huesillo", "merken", "anís", "butterfly"
     ]
     if any(x in nombre_lower for x in verduleria):
-        return " Frutas y Verduras Frescas"
+        return "Frutas y Verduras Frescas"
     elif any(x in nombre_lower for x in especias):
-        return " Especias y Deshidratados"
+        return "Especias y Deshidratados"
     else:
-        return " Abarrotes, Lácteos y Otros"
+        return "Abarrotes, Lácteos y Otros"
 
-# --- 4. CONSTRUCTOR DINÁMICO DE EXCEL (Replica tu diseño original) ---
+# --- CONSTRUCTOR DINÁMICO DE EXCEL ---
 def generar_excel_desde_datos(conteos, responsable, fecha):
     wb = openpyxl.Workbook()
     ws = wb.active
     ws.title = "Hoja1"
     
-    # Estilos del Excel
     font_titulo = Font(name="Calibri", size=14, bold=True, color="1B365D")
     font_sub = Font(name="Calibri", size=11, bold=True)
     font_header = Font(name="Calibri", size=11, bold=True, color="FFFFFF")
@@ -122,17 +104,14 @@ def generar_excel_desde_datos(conteos, responsable, fecha):
         bottom=Side(style='thin', color='CCCCCC')
     )
     
-    # Fila 1: Título Principal
     ws["A1"] = "Inventario Abarrote Barra"
     ws["A1"].font = font_titulo
     
-    # Fila 2 y 3: Metadatos
     ws["A2"] = f"Nombre Responsable: {responsable}"
     ws["A2"].font = font_sub
     ws["A3"] = f"Fecha: {fecha}"
     ws["A3"].font = font_sub
     
-    # Fila 4: Cabeceras
     headers = ["Nombre", "Par Stock", "Bodega", "MEDIDA", "Pedido", "MEDIDA"]
     for col_idx, h in enumerate(headers, 1):
         cell = ws.cell(row=4, column=col_idx, value=h)
@@ -140,7 +119,6 @@ def generar_excel_desde_datos(conteos, responsable, fecha):
         cell.fill = fill_header
         cell.alignment = Alignment(horizontal="center", vertical="center")
         
-    # Fila 5 en adelante: Productos del Catálogo
     for row_idx, (clave, info) in enumerate(conteos.items(), 5):
         actual = info["Actual"]
         cantidad_pedir = max(0.0, info["Par"] - actual)
@@ -152,11 +130,9 @@ def generar_excel_desde_datos(conteos, responsable, fecha):
         ws.cell(row=row_idx, column=5, value=cantidad_pedir if cantidad_pedir > 0 else "").alignment = Alignment(horizontal="right")
         ws.cell(row=row_idx, column=6, value=info["Medida"]).alignment = Alignment(horizontal="center")
         
-        # Aplicar bordes suaves a la tabla
         for col_idx in range(1, 7):
             ws.cell(row=row_idx, column=col_idx).border = border_thin
             
-    # Ajuste automático del ancho de columnas
     for col in ws.columns:
         max_len = max(len(str(cell.value or '')) for cell in col)
         col_letter = get_column_letter(col[0].column)
@@ -166,16 +142,15 @@ def generar_excel_desde_datos(conteos, responsable, fecha):
     wb.save(buffer)
     return buffer.getvalue()
 
-# --- 5. REDACTOR DE MENSAJE WHATSAPP ---
+# --- REDACTOR DE MENSAJE WHATSAPP ---
 def generar_mensaje_whatsapp(lista_pedidos):
-    mensaje = "Buen día, para mañana vamos a pedir lo siguiente:\n\n"
+    mensaje = "Hola, para mañana necesitamos lo siguiente:\n\n"
     categorias_presentes = lista_pedidos["Categoria"].unique()
     
     for cat in categorias_presentes:
         items_cat = lista_pedidos[lista_pedidos["Categoria"] == cat]
-        mensaje += f"📦 *{cat.upper()}*\n"
+        mensaje += f" *{cat.upper()}*\n"
         for _, row in items_cat.iterrows():
-            # Mostramos cantidades formateadas (sin decimales si son enteros)
             cant = row['Cantidad_Pedir']
             cant_str = f"{int(cant)}" if cant % 1 == 0 else f"{cant}"
             mensaje += f"• {row['Producto']}: *{cant_str}* {row['Medida']}\n"
@@ -185,16 +160,70 @@ def generar_mensaje_whatsapp(lista_pedidos):
     return mensaje
 
 # --- INTERFAZ DE USUARIO ---
-st.title("🍋‍🟩 Pedidos de Abarrotes - El Bajo")
-st.write("Registra el stock del local en tiempo real y genera el pedido directo a WhatsApp.")
+st.title(" Pedidos de Cocina - El Bajo")
 
-if st.session_state.etapa == "formulario":
-    # Convertimos la lista estática en un DataFrame para operar
+# =====================================================================
+# PASO 1: CONFIGURACIÓN OBLIGATORIA (PANTALLA DE BLOQUEO EN EL CELULAR)
+# =====================================================================
+if st.session_state.paso_flujo == "configuracion":
+    st.subheader(" Configuración Obligatoria de Turno")
+    st.write("Por favor, ingresa los siguientes datos para poder habilitar el inventario:")
+    
+    # Inputs grandes, directos y listos para el pulgar en el celular
+    responsable_temp = st.text_input(
+        " Tu Nombre (Responsable del turno):", 
+        value=st.session_state.responsable,
+        placeholder="Ej: Alan Brito"
+    )
+    
+    telefono_temp = st.text_input(
+        " WhatsApp del encargado (Debe incluir +569 y tener 11 números):", 
+        value=st.session_state.telefono_proveedor,
+        placeholder="Ej: +56912345678"
+    )
+    
+    fecha_temp = st.date_input(
+        "📅 Fecha del Inventario:",
+        value=datetime.strptime(st.session_state.fecha_inventario, '%Y-%m-%d')
+    ).strftime('%Y-%m-%d')
+    
+    st.markdown("---")
+    
+    # Validación estricta al hacer clic en avanzar
+    if st.button(" INICIAR CONTEO DE STOCK", use_container_width=True):
+        tel_limpio = telefono_temp.strip().replace("+", "").replace(" ", "")
+        
+        if not responsable_temp.strip():
+            st.error("⚠️ Debes ingresar tu nombre para poder registrar el documento Excel.")
+        elif not tel_limpio.isdigit() or len(tel_limpio) != 11 or not tel_limpio.startswith("+569"):
+            st.error("⚠️ WhatsApp inválido. Asegúrate de ingresar el código de país completo (ej: +569 y luego los 8 números de teléfono).")
+        else:
+            # Guardamos la configuración aprobada en la sesión global
+            st.session_state.responsable = responsable_temp.strip()
+            st.session_state.telefono_proveedor = tel_limpio
+            st.session_state.fecha_inventario = fecha_temp
+            st.session_state.paso_flujo = "formulario" # Desbloqueamos el inventario
+            st.rerun()
+
+# =====================================================================
+# PASO 2: INVENTARIO ACTIVO (DESBLOQUEADO)
+# =====================================================================
+elif st.session_state.paso_flujo == "formulario":
+    # Banner informativo superior muy cómodo para el celular
+    st.success(f"🔓 Turno Activo: {st.session_state.responsable} | 📅 {st.session_state.fecha_inventario}")
+    
+    # Botón de escape por si quieren editar el teléfono o el responsable sobre la marcha
+    if st.button("⚙️ Cambiar Teléfono o Responsable", use_container_width=True):
+        st.session_state.paso_flujo = "configuracion"
+        st.rerun()
+        
+    st.markdown("---")
+    
+    # Convertimos el catálogo estático en dataframe
     df_inv = pd.DataFrame(PRODUCTOS_BASE)
     df_inv["Categoria"] = df_inv["Nombre"].apply(categorizar_producto)
     
-    st.subheader("📝 Conteo Actual de Insumos")
-    st.info("Despliega las categorías y digita la cantidad física que tienes actualmente:")
+    st.subheader(" Conteo Actual de Insumos")
     
     conteos_usuario = {}
     categorias = [" Frutas y Verduras Frescas", " Especias y Deshidratados", " Abarrotes, Lácteos y Otros"]
@@ -209,10 +238,10 @@ if st.session_state.etapa == "formulario":
                 par_stock = row["Par"]
                 medida = row["Medida"]
                 
-                st.markdown(f"{prod_name}")
+                st.markdown(f"*{prod_name}*")
                 st.caption(f"📏 Medida: {medida} | Par: {par_stock}")
                 
-                # Control inteligente de decimales
+                # Control inteligente de decimales para pantalla móvil
                 decimales_activos = (par_stock % 1 != 0)
                 step_val = 0.1 if decimales_activos else 1.0
                 val_format = "%.1f" if decimales_activos else "%d"
@@ -234,7 +263,8 @@ if st.session_state.etapa == "formulario":
                 }
                 st.markdown("---")
                 
-    if st.button("CALCULAR PEDIDO DE ABARROTES", use_container_width=True):
+    # --- CALCULO Y DESPACHO ---
+    if st.button("🚀 CALCULAR PEDIDO DE COCINA", use_container_width=True):
         registros_pedido = []
         for clave, info in conteos_usuario.items():
             cantidad_pedir = max(0.0, info["Par"] - info["Actual"])
@@ -249,34 +279,34 @@ if st.session_state.etapa == "formulario":
         df_pedido = pd.DataFrame(registros_pedido)
         
         if not df_pedido.empty:
-            # Generamos el Excel en memoria
+            # Construcción dinámica del archivo Excel
             st.session_state.excel_final = generar_excel_desde_datos(
                 conteos_usuario, 
                 st.session_state.responsable, 
                 st.session_state.fecha_inventario
             )
             
-            st.subheader("📋 Pedido Generado")
+            st.subheader(" Pedido Sugerido")
             st.dataframe(df_pedido[["Categoria", "Producto", "Cantidad_Pedir", "Medida"]], use_container_width=True, hide_index=True)
             
-            # Formateador del mensaje de WhatsApp
+            # Formateamos texto para WhatsApp
             texto_pedido = generar_mensaje_whatsapp(df_pedido)
-            st.subheader(" Vista Previa para Proveedor")
+            st.subheader(" Vista Previa del Pedido")
             st.code(texto_pedido, language="text")
             
-            # Codificación segura para internet de la API de WhatsApp
+            # Codificación URL para el redireccionamiento
             texto_codificado = urllib.parse.quote(texto_pedido)
             url_whatsapp = f"https://wa.me/{st.session_state.telefono_proveedor}?text={texto_codificado}"
             
-            st.markdown("📲 ¡Enviar Pedido y Guardar!")
+            st.markdown("### 📲 Despacho Directo")
             st.link_button("🟢 ENVIAR PEDIDO POR WHATSAPP", url_whatsapp, use_container_width=True)
             
             st.download_button(
-                label="📥 DESCARGAR PLANILLA EXCEL ACTUALIZADA",
+                label=" DESCARGAR PLANILLA EXCEL REGISTRADA",
                 data=st.session_state.excel_final,
                 file_name=f"Pedido_Cocina_{st.session_state.fecha_inventario}.xlsx",
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 use_container_width=True
             )
         else:
-            st.success(" ¡Todos los niveles de stock están completos! No es necesario pedir nada hoy.")
+            st.success(" ¡Todos los niveles de stock están completos! No es necesario realizar pedidos hoy.")
