@@ -166,20 +166,19 @@ st.title(" :material/grocery: Pedidos de Abarrotes - El Bajo")
 # PASO 1: CONFIGURACIÓN OBLIGATORIA (PANTALLA DE BLOQUEO EN EL CELULAR)
 # =====================================================================
 if st.session_state.paso_flujo == "configuracion":
-    st.subheader(":material/lock_person: Configuración Obligatoria de Turno")
+    st.subheader(":material/lock: Configuración Obligatoria de Turno")
     st.write("Por favor, ingresa los siguientes datos para poder habilitar el inventario:")
     
-    # Inputs grandes, directos y listos para el pulgar en el celular
     responsable_temp = st.text_input(
-        " Tu Nombre (Responsable del turno):", 
+        "Tu Nombre (Responsable del turno):", 
         value=st.session_state.responsable,
         placeholder="Ej: Alan Brito"
     )
     
     telefono_temp = st.text_input(
-        " WhatsApp del encargado de hacer el pedido (Debe incluir +569 y tener 11 números):", 
+        " WhatsApp del Proveedor (Celular de 9 dígitos o con +569):", 
         value=st.session_state.telefono_proveedor,
-        placeholder="Ej: +56912345678"
+        placeholder="Ej: 9 1234 5678 o +569 1234 5678"
     )
     
     fecha_temp = st.date_input(
@@ -189,22 +188,31 @@ if st.session_state.paso_flujo == "configuracion":
     
     st.markdown("---")
     
-    # Validación estricta al hacer clic en avanzar
-    if st.button(" INICIAR CONTEO DE STOCK", use_container_width=True):
-        tel_limpio = telefono_temp.strip().replace("+", "").replace(" ", "")
+    # Validación inteligente al hacer clic en avanzar
+    if st.button(":material/expand_circle_down: INICIAR CONTEO DE STOCK", use_container_width=True):
+        # 1. Deja estrictamente SOLO los dígitos (elimina +, espacios, guiones, etc.)
+        tel_limpio = "".join(c for c in telefono_temp if c.isdigit())
         
+        # 2. Si escribieron 9 dígitos que parten con 9 (ej: 912345678), auto-agregamos "56"
+        if len(tel_limpio) == 9 and tel_limpio.startswith("9"):
+            tel_limpio = "56" + tel_limpio
+            
+        # 3. Si escribieron 8 dígitos (ej: 12345678), auto-agregamos "569"
+        elif len(tel_limpio) == 8:
+            tel_limpio = "569" + tel_limpio
+            
+        # 4. Validaciones de salida
         if not responsable_temp.strip():
             st.error(":material/error: Debes ingresar tu nombre para poder registrar el documento Excel.")
-        elif not tel_limpio.isdigit() or len(tel_limpio) != 11 or not tel_limpio.startswith("+569"):
-            st.error(":material/error: WhatsApp inválido. Asegúrate de ingresar el código de país completo (ej: +569 y luego los 8 números de teléfono).")
+        elif len(tel_limpio) != 11 or not tel_limpio.startswith("569"):
+            st.error(":material/error: Número de WhatsApp no reconocido. Recuerda ingresar los 9 dígitos de un celular chileno válido.")
         else:
-            # Guardamos la configuración aprobada en la sesión global
+            # Guardamos la configuración aprobada y formateada
             st.session_state.responsable = responsable_temp.strip()
             st.session_state.telefono_proveedor = tel_limpio
             st.session_state.fecha_inventario = fecha_temp
             st.session_state.paso_flujo = "formulario" # Desbloqueamos el inventario
             st.rerun()
-
 # =====================================================================
 # PASO 2: INVENTARIO ACTIVO (DESBLOQUEADO)
 # =====================================================================
@@ -213,7 +221,7 @@ elif st.session_state.paso_flujo == "formulario":
     st.success(f":material/lock_open_right: Turno Activo: {st.session_state.responsable} | :material/date_range: {st.session_state.fecha_inventario}")
     
     # Botón de escape por si quieren editar el teléfono o el responsable sobre la marcha
-    if st.button(":material/configure: Cambiar Teléfono o Responsable", use_container_width=True):
+    if st.button(":material/build_circle: Cambiar Teléfono o Responsable", use_container_width=True):
         st.session_state.paso_flujo = "configuracion"
         st.rerun()
         
@@ -223,10 +231,10 @@ elif st.session_state.paso_flujo == "formulario":
     df_inv = pd.DataFrame(PRODUCTOS_BASE)
     df_inv["Categoria"] = df_inv["Nombre"].apply(categorizar_producto)
     
-    st.subheader(":material/clipboard_list: Conteo Actual de Insumos")
+    st.subheader(":material/assignment: Conteo Actual de Insumos")
     
     conteos_usuario = {}
-    categorias = [" Frutas y Verduras Frescas", " Especias y Deshidratados", " Abarrotes, Lácteos y Otros"]
+    categorias = ["Frutas y Verduras Frescas", "Especias y Deshidratados", "Abarrotes, Lácteos y Otros"]
     
     for cat in categorias:
         df_cat = df_inv[df_inv["Categoria"] == cat]
@@ -243,12 +251,18 @@ elif st.session_state.paso_flujo == "formulario":
                 
                 # Control inteligente de decimales para pantalla móvil
                 decimales_activos = (par_stock % 1 != 0)
-                step_val = 0.1 if decimales_activos else 1.0
-                val_format = "%.1f" if decimales_activos else "%d"
+                if decimales_activos:
+                    step_val = 0.1
+                    min_val = 0.0
+                    val_format = "%.1f"
+                else:
+                    step_val = 1     # Entero puro
+                    min_val = 0      # Entero puro
+                    val_format = "%d" # Formato entero
                 
                 actual_val = st.number_input(
                     label=f"En Stock ({medida})",
-                    min_value=0.0,
+                    min_value=min_val,
                     step=step_val,
                     format=val_format,
                     key=f"stock_{idx}_{prod_name}"
