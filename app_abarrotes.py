@@ -58,7 +58,7 @@ PRODUCTOS_BASE = [
 
 # --- CONTROL DE SESIÓN GENERAL ---
 if "telefono_proveedor" not in st.session_state:
-    st.session_state.telefono_proveedor = "569"
+    st.session_state.telefono_proveedor = "+569"
 if "responsable" not in st.session_state:
     st.session_state.responsable = ""
 if "fecha_inventario" not in st.session_state:
@@ -71,7 +71,7 @@ if "excel_final" not in st.session_state:
 # --- 2. CONFIGURACIÓN LATERAL (CONTROL SEGURO DE ESTADOS) ---
 st.sidebar.header("⚙️ Configuración del Pedido")
 st.session_state.telefono_proveedor = st.sidebar.text_input(
-    "Teléfono del Encargado (con código de país, ej: 56912345678):",
+    "Teléfono del Encargado (con código de país, ej: +56912345678):",
     value=st.session_state.telefono_proveedor
 )
 
@@ -98,11 +98,11 @@ def categorizar_producto(nombre):
         "huesillo", "merken", "anís", "butterfly"
     ]
     if any(x in nombre_lower for x in verduleria):
-        return "🥬 Frutas y Verduras Frescas"
+        return " Frutas y Verduras Frescas"
     elif any(x in nombre_lower for x in especias):
-        return "🌶️ Especias y Deshidratados"
+        return " Especias y Deshidratados"
     else:
-        return "🥛 Abarrotes, Lácteos y Otros"
+        return " Abarrotes, Lácteos y Otros"
 
 # --- 4. CONSTRUCTOR DINÁMICO DE EXCEL (Replica tu diseño original) ---
 def generar_excel_desde_datos(conteos, responsable, fecha):
@@ -168,7 +168,7 @@ def generar_excel_desde_datos(conteos, responsable, fecha):
 
 # --- 5. REDACTOR DE MENSAJE WHATSAPP ---
 def generar_mensaje_whatsapp(lista_pedidos):
-    mensaje = "Buen día, para mañana vamos a pedir lo siguiente:*\n\n"
+    mensaje = "Buen día, para mañana vamos a pedir lo siguiente:\n\n"
     categorias_presentes = lista_pedidos["Categoria"].unique()
     
     for cat in categorias_presentes:
@@ -181,11 +181,11 @@ def generar_mensaje_whatsapp(lista_pedidos):
             mensaje += f"• {row['Producto']}: *{cant_str}* {row['Medida']}\n"
         mensaje += "\n"
         
-    mensaje += "💡 _Por favor confírmame el total y el tiempo estimado de reparto._"
+    mensaje += "Muchas gracias!"
     return mensaje
 
 # --- INTERFAZ DE USUARIO ---
-st.title("Pedidos de Abarrotes - El Bajo")
+st.title("🍋‍🟩 Pedidos de Abarrotes - El Bajo")
 st.write("Registra el stock del local en tiempo real y genera el pedido directo a WhatsApp.")
 
 if st.session_state.etapa == "formulario":
@@ -197,7 +197,7 @@ if st.session_state.etapa == "formulario":
     st.info("Despliega las categorías y digita la cantidad física que tienes actualmente:")
     
     conteos_usuario = {}
-    categorias = ["🥬 Frutas y Verduras Frescas", "🌶️ Especias y Deshidratados", "🥛 Abarrotes, Lácteos y Otros"]
+    categorias = [" Frutas y Verduras Frescas", " Especias y Deshidratados", " Abarrotes, Lácteos y Otros"]
     
     for cat in categorias:
         df_cat = df_inv[df_inv["Categoria"] == cat]
@@ -209,7 +209,7 @@ if st.session_state.etapa == "formulario":
                 par_stock = row["Par"]
                 medida = row["Medida"]
                 
-                st.markdown(f"**{prod_name}**")
+                st.markdown(f"{prod_name}")
                 st.caption(f"📏 Medida: {medida} | Par: {par_stock}")
                 
                 # Control inteligente de decimales
@@ -279,4 +279,4 @@ if st.session_state.etapa == "formulario":
                 use_container_width=True
             )
         else:
-            st.success("🎉 ¡Todos los niveles de stock están completos! No es necesario pedir nada hoy.")
+            st.success(" ¡Todos los niveles de stock están completos! No es necesario pedir nada hoy.")
