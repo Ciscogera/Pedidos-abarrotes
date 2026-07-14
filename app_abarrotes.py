@@ -185,7 +185,7 @@ def generar_mensaje_whatsapp(lista_pedidos):
     return mensaje
 
 # --- INTERFAZ DE USUARIO ---
-st.title("🍅 Pedidos de Abarrotes - El Bajo")
+st.title("Pedidos de Abarrotes - El Bajo")
 st.write("Registra el stock del local en tiempo real y genera el pedido directo a WhatsApp.")
 
 if st.session_state.etapa == "formulario":
