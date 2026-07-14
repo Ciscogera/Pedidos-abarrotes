@@ -197,7 +197,7 @@ if st.session_state.etapa == "formulario":
     st.info("Despliega las categorías y digita la cantidad física que tienes actualmente:")
     
     conteos_usuario = {}
-    categorias = ["🥬 Frutas y Verduras Frescas", "🌶️ Especias y Deshidratados", "🥫 Abarrotes, Lácteos y Otros"]
+    categorias = ["🥬 Frutas y Verduras Frescas", "🌶️ Especias y Deshidratados", "🥛 Abarrotes, Lácteos y Otros"]
     
     for cat in categorias:
         df_cat = df_inv[df_inv["Categoria"] == cat]
