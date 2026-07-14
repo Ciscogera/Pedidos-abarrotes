@@ -177,7 +177,7 @@ if st.session_state.paso_flujo == "configuracion":
     )
     
     telefono_temp = st.text_input(
-        " WhatsApp del encargado (Debe incluir +569 y tener 11 números):", 
+        " WhatsApp del encargado de hacer el pedido (Debe incluir +569 y tener 11 números):", 
         value=st.session_state.telefono_proveedor,
         placeholder="Ej: +56912345678"
     )
