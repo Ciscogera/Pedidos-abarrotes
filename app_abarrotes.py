@@ -147,13 +147,27 @@ def generar_mensaje_whatsapp(lista_pedidos):
     mensaje = "Hola, para mañana necesitamos lo siguiente:\n\n"
     categorias_presentes = lista_pedidos["Categoria"].unique()
     
+    # ⚙️ DICCIONARIO TRADUCTOR: Agrega aquí las unidades que quieras cambiar
+    unidades_esteticas = {
+        "KG": "Kg",
+        "UND": "Und.",
+        "LT": "Lt.",
+        "MALLAS": "Mallas",
+        "CAJA": "Caja"
+    }
+    
     for cat in categorias_presentes:
         items_cat = lista_pedidos[lista_pedidos["Categoria"] == cat]
         mensaje += f" *{cat.upper()}*\n"
         for _, row in items_cat.iterrows():
             cant = row['Cantidad_Pedir']
             cant_str = f"{int(cant)}" if cant % 1 == 0 else f"{cant}"
-            mensaje += f"• {row['Producto']}: *{cant_str}* {row['Medida']}\n"
+            
+            # 🔄 TRADUCCIÓN: Busca si la medida está en el diccionario, 
+            # si no la encuentra, deja la original por defecto.
+            medida_original = row['Medida']
+            medida_bonita = unidades_esteticas.get(medida_original, medida_original)
+            mensaje += f"• {row['Producto']}: *{cant_str}* {medida_bonita}\n"
         mensaje += "\n"
         
     mensaje += "Muchas gracias!"
